@@ -34,7 +34,7 @@ SIZE = $(PREFIX)-size
 OBJS = $(patsubst %.c, %.o, $(wildcard $(SRC)/*.c))
 LIBS = $(foreach x, $(wildcard $(LIB)/*.a), $(x))
 
-all : $(OBJS) $(PROJECT).elf
+all : $(OBJS) $(PROJECT).elf $(PROJECT).bin
 
 clean :
 	@rm -rf $(OUT)
@@ -47,5 +47,9 @@ clean :
 $(PROJECT).elf : $(OBJS)
 	@echo "LD	$(@)"
 	@$(LD) $^ $(LINKFLAGS) $(LIBS) -o $(OUT)/$(PROJECT).elf
+
+$(PROJECT).bin : $(PROJECT).elf
+	@echo "OBJCOPY $(@)"
+	@$(OBJCOPY) $(OUT)/$^ -O binary $(OUT)/$@
 
 .phony: all clean
