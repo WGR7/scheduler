@@ -1,17 +1,24 @@
-// task.c
+// task.c:
 
 #include "task.h"
 
-void create_task(task_fn fn, uint32_t* sp)
+extern volatile struct tcb_t ready_queue[2];
+
+void create_task(task_fn fn, uint32_t* stack_base)
 {
+    static int cnt;
     struct tcb_t task_block = {
         .fn = fn,
-        .sp = sp
+        .sp_base = stack_base,
+        .sp = stack_base
     };
-    stack_init(&task_block);
+
+    task_block.sp = stack_init(&task_block);
+    ready_queue[cnt] = task_block;
+    cnt++;
 }
 
-void stack_init(struct tcb_t* task_block)
+uint32_t* stack_init(struct tcb_t* task_block)
 {
     uint32_t* sp = task_block->sp;
     // Full descending stack
@@ -32,4 +39,6 @@ void stack_init(struct tcb_t* task_block)
     sp--;
     *sp = 0x00;             // r0
     sp -= 8;                // r4-r11
+
+    return sp;
 }

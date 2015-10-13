@@ -10,10 +10,11 @@ typedef void (*task_fn)(void);
 
 struct tcb_t {
     task_fn fn;
+    uint32_t* sp_base;
     uint32_t* sp;
 } tcb_t;
 
-void create_task(task_fn fn, uint32_t* sp);
-void stack_init(struct tcb_t* task_block);
+void create_task(task_fn fn, uint32_t* stack_base);
+uint32_t* stack_init(struct tcb_t* task_block);
 
 #endif
