@@ -1,6 +1,6 @@
 # Makefile for scheduler
 PROJECT = scheduler
-BOARD = ek-lm3s811
+BOARD ?= ek-lm3s811
 
 PREFIX = arm-none-eabi
 
@@ -12,34 +12,24 @@ LIB = lib
 ${shell mkdir -p $(OUT)}
 
 CC = $(PREFIX)-gcc
-CFLAGS =	-mcpu=cortex-m3 \
-			-mthumb \
-			-ffreestanding \
-			-nostdlib \
-			-O1 \
-			-Wall \
-			-Werror \
-			-Wextra \
-			-ggdb3 \
-			--std=c99 \
-			-fdata-sections \
-			-ffunction-sections \
-			-fomit-frame-pointer
-
 LD = $(PREFIX)-ld
-LINKFLAGS = -T standalone.ld \
-			-Map $(OUT)/mem.map \
-			--entry ResetISR
-
 AS = $(PREFIX)-as
 GDB = $(PREFIX)-gdb
 OBJCOPY = $(PREFIX)-objcopy
+OBJDUMP = $(PREFIX)-objdump
 SIZE = $(PREFIX)-size
+
+CFLAGS +=	-mcpu=cortex-m3 -mthumb -ffreestanding 	-nostdlib -O1 -Wall
+CFLAGS +=	-Werror -Wextra -ggdb3 --std=c99 -fdata-sections
+CFLAGS +=	-ffunction-sections -fomit-frame-pointer
+
+LINKFLAGS += -Tstandalone.ld -Map $(OUT)/mem.map --entry ResetISR
 
 OBJS = $(patsubst %.c, %.o, $(wildcard $(SRC)/*.c))
 LIBS = $(foreach x, $(wildcard $(LIB)/*.a), $(x))
 
-all : $(OBJS) $(PROJECT).elf $(PROJECT).bin
+# Rules
+all : $(OBJS) $(PROJECT).elf $(PROJECT).bin size
 
 program : all
 	openocd -f board/$(BOARD).cfg &
@@ -49,6 +39,9 @@ clean :
 	@rm -rf $(OUT)
 	@rm -rf $(wildcard $(SRC)/*.o)
 	@rm -rf $(PROJECT).s
+
+size : $(PROJECT).elf
+	@$(SIZE) --format=berkeley $(OUT)/$^
 
 %.o : %.c
 	@echo "CC	$(<)"
@@ -61,6 +54,6 @@ $(PROJECT).elf : $(OBJS)
 $(PROJECT).bin : $(PROJECT).elf
 	@echo "OBJCOPY $(@)"
 	@$(OBJCOPY) $(OUT)/$^ -O binary $(OUT)/$@
-	@arm-none-eabi-objdump $(OUT)/$(PROJECT).elf -D > $(PROJECT).s
+	@$(OBJDUMP) $(OUT)/$(PROJECT).elf -D > $(PROJECT).s
 
 .phony: all clean
